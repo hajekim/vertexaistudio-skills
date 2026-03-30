@@ -195,3 +195,58 @@ print(final_response.text)
 > - `response.function_calls`로 함수 호출 여부를 확인한다.
 > - 함수 결과는 반드시 `Part.from_function_response()`로 감싸서 반환한다.
 > - 한 요청에 최대 512개 함수 선언 가능.
+
+---
+
+## § 4. 구조화된 출력 (Controlled Output)
+
+### 언제: JSON 형식의 일관된 응답이 필요할 때 (파싱, 데이터 처리 등)
+
+```python
+from google import genai
+from google.genai.types import HttpOptions, GenerateContentConfig
+
+client = genai.Client(http_options=HttpOptions(api_version="v1"))
+
+response_schema = {
+    "type": "ARRAY",
+    "items": {
+        "type": "OBJECT",
+        "properties": {
+            "name": {"type": "STRING"},
+            "price": {"type": "NUMBER"},
+            "in_stock": {"type": "BOOLEAN"},
+        },
+        "required": ["name", "price", "in_stock"],
+    },
+}
+
+response = client.models.generate_content(
+    model="gemini-2.5-flash",
+    contents="List 3 popular fruits with their approximate price per kg and availability.",
+    config=GenerateContentConfig(
+        response_mime_type="application/json",
+        response_schema=response_schema,
+    ),
+)
+
+import json
+data = json.loads(response.text)
+print(data)
+# [{"name": "Apple", "price": 3.5, "in_stock": true}, ...]
+```
+
+### 지원 타입
+
+| JSON Schema 타입 | Python 예시 |
+|-----------------|-------------|
+| `STRING` | 문자열 |
+| `NUMBER` | 정수/실수 |
+| `BOOLEAN` | True/False |
+| `ARRAY` | 리스트 |
+| `OBJECT` | 딕셔너리 |
+
+> **원칙:**
+> - `response_mime_type`은 반드시 `"application/json"`으로 설정한다.
+> - `required` 필드를 명시해야 모델이 해당 필드를 반드시 채운다.
+> - 응답은 `json.loads(response.text)`로 파싱한다.
