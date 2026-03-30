@@ -15,6 +15,7 @@
 | `video-skills` | `skills/video-skills/SKILL.md` | Veo 텍스트→비디오, 이미지→비디오, 프레임 보간, 비디오 연장, 고급 기법, Safety |
 | `thinking-skills` | `skills/thinking-skills/SKILL.md` | Thinking Budget, Thinking Level, Thought 요약, Thought Signatures |
 | `grounding-skills` | `skills/grounding-skills/SKILL.md` | Google Search, Maps, Vertex AI Search, Elasticsearch, Custom API, Parallel, Enterprise Web |
+| `model-skills` | `skills/model-skills/SKILL.md` | 모델 라이프사이클, LLM/이미지/비디오 모델 선택, 마이그레이션 가이드 (SDK 전환, Breaking Changes) |
 
 ---
 
@@ -72,6 +73,7 @@ ln -s "$(pwd)/skills/image-skills"     ~/.gemini/skills/image-skills
 ln -s "$(pwd)/skills/video-skills"     ~/.gemini/skills/video-skills
 ln -s "$(pwd)/skills/thinking-skills"  ~/.gemini/skills/thinking-skills
 ln -s "$(pwd)/skills/grounding-skills" ~/.gemini/skills/grounding-skills
+ln -s "$(pwd)/skills/model-skills"     ~/.gemini/skills/model-skills
 ```
 
 ### 설치 확인
@@ -84,6 +86,7 @@ ls -la ~/.gemini/skills/
 ```
 grounding-skills -> /home/user/sandbox/vertexai-skills/skills/grounding-skills
 image-skills     -> /home/user/sandbox/vertexai-skills/skills/image-skills
+model-skills     -> /home/user/sandbox/vertexai-skills/skills/model-skills
 text-skills      -> /home/user/sandbox/vertexai-skills/skills/text-skills
 thinking-skills  -> /home/user/sandbox/vertexai-skills/skills/thinking-skills
 video-skills     -> /home/user/sandbox/vertexai-skills/skills/video-skills
@@ -144,6 +147,16 @@ video-skills     -> /home/user/sandbox/vertexai-skills/skills/video-skills
 | `Vertex AI Search`, `버텍스 검색` | "내 문서로 RAG 구성하는 코드 써줘" |
 | `Elasticsearch grounding` | "ES 인덱스를 그라운딩 소스로 쓰는 코드 써줘" |
 | `enterprise web search` | "컴플라이언스 환경에서 웹 그라운딩 사용하는 방법" |
+
+### model-skills 트리거
+
+| 트리거 | 예시 요청 |
+|--------|---------|
+| `model selection`, `모델 선택`, `어떤 모델`, `모델 추천` | "어떤 Gemini 모델을 써야 하나요?" |
+| `model lifecycle`, `모델 라이프사이클` | "모델 은퇴일 확인하고 싶어요" |
+| `deprecated model`, `retired model`, `모델 은퇴` | "1.5 모델 아직 써도 되나요?" |
+| `model migration`, `모델 마이그레이션`, `1.5 to 2.5` | "1.5에서 2.5로 마이그레이션하는 방법" |
+| `SDK migration`, `SDK 마이그레이션` | "Vertex AI SDK에서 Gen AI SDK로 전환하는 코드 써줘" |
 
 ---
 
@@ -219,6 +232,15 @@ video-skills     -> /home/user/sandbox/vertexai-skills/skills/video-skills
 § 7. Enterprise Web Search 그라운딩 — EnterpriseWebSearch(), 컴플라이언스 환경
 ```
 
+### model-skills
+
+```
+§ 1. LLM 모델 선택    — Stable/Deprecated 모델 표, 용도별 선택 기준, Alias 주의사항
+§ 2. 이미지 모델 선택  — Imagen vs Gemini Image, Preview 모델 구분
+§ 3. 비디오 모델 선택  — veo-3.1 권장, veo-2.0 전용 기능
+§ 4. 마이그레이션 가이드 — SDK 전환 코드, Breaking Changes, 7단계 절차, 확인사항
+```
+
 ---
 
 ## 모델 선택 가이드
@@ -241,7 +263,9 @@ video-skills     -> /home/user/sandbox/vertexai-skills/skills/video-skills
 | `gemini-2.5-pro` | **Stable ✅** | 2026-06-17 | 복잡한 추론, 고품질 응답 |
 | `gemini-2.5-flash-lite` | **Stable ✅** | 2026-07-22 | 비용 최적화, 고속 처리 |
 | `gemini-2.0-flash-001` | Stable (신규 제한) | 2026-06-01 | 기존 프로젝트만. 신규는 2.5-flash로 |
-| `gemini-1.5-pro` / `flash` | **Deprecated ⚠️** | 2026-06-01~17 | 사용 중지 예정. 즉시 마이그레이션 권장 |
+| `gemini-1.5-pro-002` | **Retired ❌** | 2025-09-24 (종료) | API 호출 시 404. 즉시 교체 필요 |
+| `gemini-1.5-flash-002` | **Retired ❌** | 2025-09-24 (종료) | 동일 |
+| `gemini-1.0-pro-*` | **Retired ❌** | 2025-04-21 (종료) | 동일 |
 
 > **Thinking Budget vs Thinking Level**
 > - `thinking_budget` (토큰 수 직접 제어): `gemini-2.5-flash`, `gemini-2.5-pro`
@@ -268,7 +292,7 @@ video-skills     -> /home/user/sandbox/vertexai-skills/skills/video-skills
 
 ### 마이그레이션 핵심 체크리스트
 
-- [ ] `gemini-1.5-*` 사용 중 → `gemini-2.5-flash` 또는 `gemini-2.5-pro`로 교체 (2026-06 이전)
+- [ ] `gemini-1.5-*` 사용 중 → `gemini-2.5-flash` 또는 `gemini-2.5-pro`로 즉시 교체 (**이미 은퇴, API 404 반환 중**)
 - [ ] `gemini-2.0-flash-001` 신규 사용 → `gemini-2.5-flash`로 교체
 - [ ] `thinking_budget` 사용 코드에서 Gemini 3 모델로 업그레이드 시 → `thinking_level`로 변경
 - [ ] Vertex AI SDK(`google-cloud-aiplatform`) → Gen AI SDK(`google-genai`)로 마이그레이션 권장
@@ -314,8 +338,10 @@ vertexai-skills/
 │   │   └── SKILL.md          # 비디오 생성 레퍼런스
 │   ├── thinking-skills/
 │   │   └── SKILL.md          # 사고 모델 제어 레퍼런스
-│   └── grounding-skills/
-│       └── SKILL.md          # 그라운딩 레퍼런스 (7가지 소스)
+│   ├── grounding-skills/
+│   │   └── SKILL.md          # 그라운딩 레퍼런스 (7가지 소스)
+│   └── model-skills/
+│       └── SKILL.md          # 모델 선택 및 마이그레이션 가이드
 ├── .gitignore                 # .claude/, docs/ 제외
 └── README.md
 
@@ -325,6 +351,7 @@ vertexai-skills/
 ~/.gemini/skills/video-skills     →  skills/video-skills/
 ~/.gemini/skills/thinking-skills  →  skills/thinking-skills/
 ~/.gemini/skills/grounding-skills →  skills/grounding-skills/
+~/.gemini/skills/model-skills     →  skills/model-skills/
 ```
 
 ---
