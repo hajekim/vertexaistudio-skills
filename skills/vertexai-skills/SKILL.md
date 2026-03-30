@@ -250,3 +250,45 @@ print(data)
 > - `response_mime_type`은 반드시 `"application/json"`으로 설정한다.
 > - `required` 필드를 명시해야 모델이 해당 필드를 반드시 채운다.
 > - 응답은 `json.loads(response.text)`로 파싱한다.
+
+---
+
+## § 5. 생성 파라미터 (Generation Parameters)
+
+### 언제: 응답의 창의성, 길이, 반복성을 조절해야 할 때
+
+```python
+from google import genai
+from google.genai.types import HttpOptions, GenerateContentConfig
+
+client = genai.Client(http_options=HttpOptions(api_version="v1"))
+
+response = client.models.generate_content(
+    model="gemini-2.5-flash",
+    contents="Write a creative story about a robot.",
+    config=GenerateContentConfig(
+        temperature=1.0,          # 0.0(결정적) ~ 2.0(창의적). 기본값 1.0 권장
+        top_p=0.95,               # 누적 확률 임계값. temperature와 함께 사용
+        top_k=20,                 # 상위 K개 토큰만 고려
+        max_output_tokens=500,    # 최대 출력 토큰 수 (100토큰 ≈ 60~80 단어)
+        stop_sequences=["END"],   # 이 문자열 등장 시 생성 중단
+        seed=42,                  # 재현 가능한 출력을 위한 시드
+        presence_penalty=0.0,     # 이미 등장한 토큰 억제 (-2.0 ~ 2.0)
+        frequency_penalty=0.0,    # 반복 토큰 억제 (-2.0 ~ 2.0)
+    ),
+)
+print(response.text)
+```
+
+### 파라미터 선택 가이드
+
+| 목적 | 설정 |
+|------|------|
+| 정확한 사실 기반 응답 | `temperature=0.0` |
+| 일반적인 대화 | `temperature=1.0` (기본값) |
+| 창의적 글쓰기 | `temperature=1.5~2.0` |
+| 응답 길이 제한 | `max_output_tokens=200` |
+| 반복 억제 | `frequency_penalty=0.5~1.0` |
+
+> **원칙:** 모든 파라미터는 `GenerateContentConfig`에 한 번에 설정한다.
+> `temperature`와 `top_p`는 함께 사용 시 상호작용하므로 하나씩 조정한다.
