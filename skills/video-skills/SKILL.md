@@ -59,3 +59,49 @@ for video in operation.result.generated_videos:
 ```
 
 > **원칙:** 비디오 생성은 항상 비동기다. `operation.done`이 True가 될 때까지 15초 간격으로 폴링한다.
+
+---
+
+## § 1. 텍스트 → 비디오
+
+### 언제: 텍스트 프롬프트만으로 비디오를 생성할 때
+
+```python
+import time
+from google import genai
+from google.genai.types import GenerateVideosConfig
+
+client = genai.Client()
+output_gcs_uri = "gs://your-bucket/output/"
+
+operation = client.models.generate_videos(
+    model="veo-3.1-generate-001",
+    prompt="A cat reading a book in a cozy library, warm lighting, cinematic shot",
+    config=GenerateVideosConfig(
+        aspect_ratio="16:9",       # "16:9" (가로) 또는 "9:16" (세로/모바일)
+        number_of_videos=1,        # 생성할 비디오 수 (1-4)
+        duration_seconds=8,        # 비디오 길이 (4, 6, 8 중 선택)
+        output_gcs_uri=output_gcs_uri,
+    ),
+)
+
+# 완료까지 대기
+while not operation.done:
+    time.sleep(15)
+    operation = client.operations.get(operation)
+
+for video in operation.result.generated_videos:
+    print(video.video.uri)   # gs://your-bucket/output/xxx.mp4
+```
+
+### 파라미터 가이드
+
+| 파라미터 | 값 | 설명 |
+|---------|-----|------|
+| `aspect_ratio` | `"16:9"` / `"9:16"` | 가로형 / 세로형(모바일) |
+| `number_of_videos` | 1-4 | 생성할 비디오 수 |
+| `duration_seconds` | 4, 6, 8 | 길이 (초) |
+
+> **원칙:**
+> - `output_gcs_uri`는 필수다. 비디오는 로컬이 아닌 GCS에 저장된다.
+> - 생성 시간은 보통 2-5분 소요된다.
