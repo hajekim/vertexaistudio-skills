@@ -292,3 +292,55 @@ print(response.text)
 
 > **원칙:** 모든 파라미터는 `GenerateContentConfig`에 한 번에 설정한다.
 > `temperature`와 `top_p`는 함께 사용 시 상호작용하므로 하나씩 조정한다.
+
+---
+
+## § 6. 코드 실행 (Code Execution)
+
+### 언제: 수학 계산, 데이터 처리, 알고리즘 검증을 모델이 직접 실행해야 할 때
+
+```python
+from google import genai
+from google.genai.types import (
+    HttpOptions,
+    Tool,
+    ToolCodeExecution,
+    GenerateContentConfig,
+)
+
+client = genai.Client(http_options=HttpOptions(api_version="v1"))
+
+response = client.models.generate_content(
+    model="gemini-2.5-flash",
+    contents="Calculate the 20th Fibonacci number, then find the nearest palindrome.",
+    config=GenerateContentConfig(
+        tools=[Tool(code_execution=ToolCodeExecution())],
+        temperature=0,
+    ),
+)
+
+# 모델이 생성한 코드
+print(response.executable_code)
+
+# 코드 실행 결과
+print(response.code_execution_result)
+
+# 최종 텍스트 응답
+print(response.text)
+```
+
+### 사전 설치된 라이브러리
+
+`numpy`, `pandas`, `matplotlib`, `sympy` 등 주요 과학 라이브러리가 기본 포함됨.
+커스텀 패키지 설치는 불가.
+
+### Function Calling과의 차이
+
+| | Code Execution | Function Calling |
+|--|---------------|-----------------|
+| 실행 주체 | API 백엔드 (격리 환경) | 내 애플리케이션 |
+| 용도 | 계산, 알고리즘 | 외부 API, DB 연동 |
+| 라이브러리 | 사전 설치된 것만 | 제한 없음 |
+| 단일 요청 완결 | O | X (루프 필요) |
+
+> **원칙:** 외부 서비스 연동이 필요 없는 순수 계산/데이터 처리는 Code Execution을 우선 사용한다.
