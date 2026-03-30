@@ -455,3 +455,55 @@ refined = text_client.models.generate_content(
 )
 print(refined.text)  # 개선된 프롬프트를 veo에 전달
 ```
+
+---
+
+## § 7. Responsible AI & Safety
+
+### 금지 콘텐츠
+
+Generative AI Prohibited Use Policy에 의해 금지:
+- 아동 안전 위협 콘텐츠
+- 폭력적/극단적 콘텐츠
+- 성적으로 노골적인 콘텐츠
+- 혐오 발언 / 독성 언어
+- 유명인/실존 인물의 무단 사실적 표현
+
+### Safety 필터 에러 처리
+
+```python
+import time
+from google import genai
+from google.genai.types import GenerateVideosConfig
+
+client = genai.Client()
+output_gcs_uri = "gs://your-bucket/output/"
+
+operation = client.models.generate_videos(
+    model="veo-3.1-generate-001",
+    prompt="Your video prompt here",
+    config=GenerateVideosConfig(output_gcs_uri=output_gcs_uri),
+)
+
+while not operation.done:
+    time.sleep(15)
+    operation = client.operations.get(operation)
+
+# 결과 확인 및 Safety 에러 처리
+if operation.result and operation.result.generated_videos:
+    for video in operation.result.generated_videos:
+        print(video.video.uri)
+elif operation.error:
+    print(f"Error: {operation.error.message}")
+    # Safety 관련 에러 코드 예시:
+    # 58061214 / 17301594 → 아동 안전
+    # 90789179 / 43188360 → 성적 콘텐츠
+    # 61493863 / 56562880 → 폭력
+    # 57734940 / 22137204 → 혐오 발언
+    # 29310472 / 15236754 → 유명인 묘사
+```
+
+> **원칙:**
+> - Safety 필터로 차단된 경우 프롬프트를 수정한다.
+> - 일부 비디오만 차단되고 나머지는 반환될 수 있다 (partial results).
+> - 유명인/실존 인물의 사실적 표현은 별도 승인이 필요하다.
