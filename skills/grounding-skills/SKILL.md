@@ -383,3 +383,110 @@ Gemini가 POST로 호출하는 요청 형식:
 > - API 응답 지연이 길어지면 전체 Gemini 응답 시간이 증가한다.
 > - `snippet`의 품질이 그라운딩 응답 품질을 직접 결정한다.
 > - 인증은 API 키 방식만 지원된다.
+
+---
+
+## § 6. Parallel Web Search 그라운딩
+
+### 언제: Parallel AI의 LLM 최적화 웹 인덱스를 활용할 때
+
+> **참고:** Parallel Web Search는 현재 REST API로만 사용할 수 있다.
+
+```python
+import json
+import subprocess
+
+PROJECT_ID = "your-project-id"
+LOCATION = "us-central1"
+MODEL_ID = "gemini-2.5-flash"
+PARALLEL_API_KEY = "your-parallel-api-key"
+
+request_body = {
+    "contents": [{"role": "user", "parts": [{"text": "What is the latest news about AI?"}]}],
+    "tools": [{
+        "parallelAiSearch": {
+            "api_key": PARALLEL_API_KEY,
+            "customConfigs": {
+                "source_policy": {
+                    "exclude_domains": [],
+                    "include_domains": [],
+                },
+                "excerpts": {
+                    "max_chars_per_result": 30000,   # 1,000~100,000
+                    "max_chars_total": 100000,        # 1,000~1,000,000
+                },
+                "max_results": 10,                   # 1~20
+            }
+        }
+    }],
+}
+
+# REST API 호출 예시 (gcloud 인증 사용)
+# curl -X POST \
+#   -H "Authorization: Bearer $(gcloud auth print-access-token)" \
+#   -H "Content-Type: application/json" \
+#   -d '<request_body>' \
+#   "https://LOCATION-aiplatform.googleapis.com/v1/projects/PROJECT_ID/locations/LOCATION/publishers/google/models/MODEL_ID:generateContent"
+```
+
+### Parallel Web Search 파라미터
+
+| 파라미터 | 기본값 | 범위 | 설명 |
+|---------|--------|------|------|
+| `api_key` | — | — | Parallel AI API 키 (필수) |
+| `exclude_domains` | — | 최대 10개 | 제외할 도메인 |
+| `include_domains` | — | 최대 10개 | 포함할 도메인 (제한) |
+| `max_chars_per_result` | 30,000 | 1,000~100,000 | 결과당 최대 문자 수 |
+| `max_chars_total` | 100,000 | 1,000~1,000,000 | 전체 최대 문자 수 |
+| `max_results` | 10 | 1~20 | 최대 결과 수 |
+
+> **원칙:**
+> - 분당 60 프롬프트 기본 할당량.
+> - Parallel의 별도 이용약관이 적용된다.
+> - Pre-GA 서비스로 SLA가 없다.
+
+---
+
+## § 7. Enterprise Web Search 그라운딩
+
+### 언제: 의료·금융·공공 분야 등 컴플라이언스 규제 환경에서 웹 그라운딩이 필요할 때
+
+```python
+from google import genai
+from google.genai.types import (
+    EnterpriseWebSearch,
+    GenerateContentConfig,
+    HttpOptions,
+    Tool,
+)
+
+client = genai.Client(http_options=HttpOptions(api_version="v1"))
+
+response = client.models.generate_content(
+    model="gemini-2.5-flash",
+    contents="When is the next total solar eclipse in the United States?",
+    config=GenerateContentConfig(
+        tools=[
+            Tool(enterprise_web_search=EnterpriseWebSearch())   # 파라미터 없음
+        ],
+    ),
+)
+
+print(response.text)
+```
+
+### Google Search vs Enterprise Web Search 비교
+
+| 항목 | Google Search | Enterprise Web Search |
+|------|--------------|----------------------|
+| 인덱스 범위 | 전체 웹 (더 넓음) | 규제 산업 최적화 |
+| 최신성 | 실시간 | 6시간/24시간 업데이트 |
+| 데이터 로깅 | 표준 | 없음 |
+| VPC-SC 지원 | — | ✅ |
+| CMEK | — | 해당 없음 |
+| 일일 쿼리 제한 | — | 5,000 (Gemini 3 Pro/Pro Image) |
+
+> **원칙:**
+> - `EnterpriseWebSearch()`는 파라미터가 없다.
+> - Search Suggestion(`webSearchQueries`)은 반드시 앱에 표시해야 한다.
+> - 컴플라이언스가 필요 없다면 더 넓은 인덱스를 제공하는 Google Search를 사용한다.
