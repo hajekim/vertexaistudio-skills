@@ -1,0 +1,29 @@
+---
+name: vertexai-skills
+description: Use when working with google-genai Python SDK on Vertex AI — code imports `from google import genai`, or requests involving "Vertex AI", "Gemini on Vertex", "function calling", "structured output", "code execution", "system instruction", "generation parameters". 한국어: "버텍스 AI", "함수 호출", "구조화된 출력", "코드 실행", "시스템 지시", "생성 파라미터", "제미나이 버텍스".
+version: 1.0.0
+---
+
+# Vertex AI Skills — google-genai Python SDK 레퍼런스
+
+## 환경 설정
+
+### 필수 환경변수
+
+```bash
+export GOOGLE_CLOUD_PROJECT="your-project-id"
+export GOOGLE_CLOUD_LOCATION="us-central1"   # 또는 "global"
+export GOOGLE_GENAI_USE_VERTEXAI="True"
+```
+
+### 클라이언트 초기화 (모듈 수준에서 한 번만)
+
+```python
+from google import genai
+from google.genai.types import HttpOptions
+
+client = genai.Client(http_options=HttpOptions(api_version="v1"))
+```
+
+> **원칙:** `client`는 모듈 최상단에서 한 번 초기화한다. 함수마다 재생성하지 않는다.
+> 모든 설정은 `GenerateContentConfig`에 통합한다.
