@@ -1,4 +1,4 @@
-# vertexai-skills
+# vertexaistudio-skills
 
 **Vertex AI Studio** 기반 생성형 AI 개발을 위한 **Gemini CLI Skills** 모음. Vertex AI Studio에서 제공하는 모델(Gemini, Imagen, Veo)을 `google-genai` Python SDK로 호출할 때 필요한 올바른 코드 패턴과 레퍼런스를 제공한다.
 
