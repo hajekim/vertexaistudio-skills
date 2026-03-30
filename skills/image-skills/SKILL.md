@@ -75,3 +75,53 @@ for i, generated in enumerate(response.generated_images):
 > - `generate_images()`는 Imagen 전용 API다. Gemini 모델에는 사용할 수 없다.
 > - 결과는 `response.generated_images` 리스트로 반환된다.
 > - 저장 시 `pillow` 라이브러리가 필요하다.
+
+---
+
+## § 2. Gemini 이미지 생성
+
+### 언제: 텍스트 설명과 함께 이미지가 필요하거나 멀티모달 응답이 필요할 때
+
+```python
+from google import genai
+from google.genai.types import GenerateContentConfig, Modality
+from PIL import Image
+from io import BytesIO
+import os
+
+client = genai.Client()
+
+response = client.models.generate_content(
+    model="gemini-2.5-flash-image",
+    contents="Generate an image of the Eiffel tower with fireworks in the background.",
+    config=GenerateContentConfig(
+        response_modalities=[Modality.TEXT, Modality.IMAGE],
+    ),
+)
+
+os.makedirs("output", exist_ok=True)
+for i, part in enumerate(response.candidates[0].content.parts):
+    if part.text:
+        print(part.text)
+    elif part.inline_data:
+        image = Image.open(BytesIO(part.inline_data.data))
+        image.save(f"output/image_{i}.png")
+        print(f"Saved output/image_{i}.png")
+```
+
+### 고품질 모델 사용 시
+
+```python
+response = client.models.generate_content(
+    model="gemini-3-pro-image-preview",   # 최고 품질
+    contents="Generate a photorealistic portrait of a golden retriever in a park.",
+    config=GenerateContentConfig(
+        response_modalities=[Modality.TEXT, Modality.IMAGE],
+    ),
+)
+```
+
+> **원칙:**
+> - `response_modalities=[Modality.TEXT, Modality.IMAGE]`는 필수다.
+> - 응답 파트를 순회하며 `part.text`와 `part.inline_data`를 분기 처리한다.
+> - 이미지 데이터는 `part.inline_data.data` (bytes)로 반환된다.
