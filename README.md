@@ -221,32 +221,58 @@ video-skills     -> /home/user/sandbox/vertexai-skills/skills/video-skills
 
 ---
 
-## 주요 모델 레퍼런스
+## 모델 선택 가이드
 
-### LLM
+> 참고: [Model versions and lifecycle](https://cloud.google.com/vertex-ai/generative-ai/docs/learn/model-versions) · [Migration guide](https://cloud.google.com/vertex-ai/generative-ai/docs/migrate)
 
-| 모델 | 특징 |
+### 모델 라이프사이클 개념
+
+| 상태 | 의미 |
 |------|------|
-| `gemini-2.5-flash` | 빠른 텍스트 생성 (권장) |
-| `gemini-2.5-pro` | 고품질 복잡한 추론 |
+| **Stable (GA)** | 프로덕션 사용 권장. 은퇴일 1개월 전부터 신규 접근 차단 |
+| **Preview** | 기능 검증 중. 프로덕션 사용 비권장 |
+| **Deprecated** | 은퇴일 이후 영구 비활성화 |
 
-### 이미지
+### LLM (텍스트 생성 / 그라운딩 / 사고 모델)
 
-| 모델 | API | 특징 |
-|------|-----|------|
-| `imagen-4.0-generate-001` | `generate_images()` | 최고 품질 정적 이미지 |
-| `gemini-2.5-flash-image` | `generate_content()` | 생성 + 편집, 경량 |
-| `gemini-3-pro-image-preview` | `generate_content()` | 생성 + 편집, 최고 품질 |
-| `gemini-3.1-flash-image-preview` | `generate_content()` | 생성 + 편집, 최신 |
+| 모델 | 상태 | 은퇴일 | 권장 용도 |
+|------|------|--------|----------|
+| `gemini-2.5-flash` | **Stable ✅** | 2026-06-17 | 일반 텍스트 생성, 그라운딩 **(기본 권장)** |
+| `gemini-2.5-pro` | **Stable ✅** | 2026-06-17 | 복잡한 추론, 고품질 응답 |
+| `gemini-2.5-flash-lite` | **Stable ✅** | 2026-07-22 | 비용 최적화, 고속 처리 |
+| `gemini-2.0-flash-001` | Stable (신규 제한) | 2026-06-01 | 기존 프로젝트만. 신규는 2.5-flash로 |
+| `gemini-1.5-pro` / `flash` | **Deprecated ⚠️** | 2026-06-01~17 | 사용 중지 예정. 즉시 마이그레이션 권장 |
 
-### 비디오
+> **Thinking Budget vs Thinking Level**
+> - `thinking_budget` (토큰 수 직접 제어): `gemini-2.5-flash`, `gemini-2.5-pro`
+> - `thinking_level` (MINIMAL/LOW/MEDIUM/HIGH): Gemini 3 이상 (`gemini-3-flash`, `gemini-3.1-pro`)
 
-| 모델 | 특징 |
-|------|------|
-| `veo-3.1-generate-001` | 최신 안정 버전 **(권장)** |
-| `veo-3.1-fast-generate-001` | 빠른 생성 |
-| `veo-3.0-generate-001` | 이전 안정 버전 |
-| `veo-2.0-generate-001` | 레거시 (객체 삽입/제거, enhance_prompt 전용) |
+### 이미지 생성
+
+| 모델 | API | 상태 | 권장 용도 |
+|------|-----|------|----------|
+| `imagen-4.0-generate-001` | `generate_images()` | **Stable ✅** | 최고 품질 정적 이미지 **(권장)** |
+| `imagen-3.0-generate-002` | `generate_images()` | **Stable ✅** | Imagen 3 안정 버전 |
+| `gemini-2.5-flash-image` | `generate_content()` | Stable | 이미지 생성 + 편집, 경량 |
+| `gemini-3-pro-image-preview` | `generate_content()` | Preview | 이미지 생성 + 편집, 최고 품질 |
+| `gemini-3.1-flash-image-preview` | `generate_content()` | Preview | 이미지 생성 + 편집, 최신 |
+
+### 비디오 생성
+
+| 모델 | 상태 | 은퇴일 | 권장 용도 |
+|------|------|--------|----------|
+| `veo-3.1-generate-001` | **Stable ✅** | 미정 | 최신 안정 버전 **(권장)** |
+| `veo-3.1-fast-generate-001` | **Stable ✅** | 미정 | 빠른 생성 |
+| `veo-3.0-generate-001` | Stable | 2026-06-30 | 이전 안정 버전 |
+| `veo-2.0-generate-001` | Stable (제한적) | — | 객체 삽입/제거, `enhance_prompt` 전용 |
+
+### 마이그레이션 핵심 체크리스트
+
+- [ ] `gemini-1.5-*` 사용 중 → `gemini-2.5-flash` 또는 `gemini-2.5-pro`로 교체 (2026-06 이전)
+- [ ] `gemini-2.0-flash-001` 신규 사용 → `gemini-2.5-flash`로 교체
+- [ ] `thinking_budget` 사용 코드에서 Gemini 3 모델로 업그레이드 시 → `thinking_level`로 변경
+- [ ] Vertex AI SDK(`google-cloud-aiplatform`) → Gen AI SDK(`google-genai`)로 마이그레이션 권장
+- [ ] 지역 가용성 확인: `us-central1` 권장 (`global`은 일부 모델만 지원)
 
 ---
 
