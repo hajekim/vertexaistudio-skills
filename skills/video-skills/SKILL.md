@@ -105,3 +105,43 @@ for video in operation.result.generated_videos:
 > **원칙:**
 > - `output_gcs_uri`는 필수다. 비디오는 로컬이 아닌 GCS에 저장된다.
 > - 생성 시간은 보통 2-5분 소요된다.
+
+---
+
+## § 2. 이미지 → 비디오
+
+### 언제: 정적 이미지에 움직임을 추가하여 비디오로 만들 때
+
+```python
+import time
+from google import genai
+from google.genai.types import GenerateVideosConfig, Image
+
+client = genai.Client()
+output_gcs_uri = "gs://your-bucket/output/"
+
+operation = client.models.generate_videos(
+    model="veo-3.1-generate-001",
+    prompt="The flowers sway gently in the breeze, petals trembling",
+    image=Image(
+        gcs_uri="gs://your-bucket/input/flowers.png",   # GCS 경로 필수
+        mime_type="image/png",                           # "image/png" 또는 "image/jpeg"
+    ),
+    config=GenerateVideosConfig(
+        aspect_ratio="16:9",
+        output_gcs_uri=output_gcs_uri,
+    ),
+)
+
+while not operation.done:
+    time.sleep(15)
+    operation = client.operations.get(operation)
+
+for video in operation.result.generated_videos:
+    print(video.video.uri)
+```
+
+> **원칙:**
+> - 입력 이미지는 반드시 GCS에 업로드 후 `gcs_uri`로 참조한다.
+> - 권장 해상도: 720p 이상.
+> - 프롬프트는 이미지에 추가할 **동작(motion)**만 설명한다. 이미지 내용을 재설명하지 않는다.
