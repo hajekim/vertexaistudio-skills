@@ -189,3 +189,57 @@ for video in operation.result.generated_videos:
 > - `image` (첫 프레임)은 `generate_videos()` 직접 파라미터로 전달한다.
 > - `last_frame` (마지막 프레임)은 `GenerateVideosConfig` 안에 전달한다.
 > - 두 이미지의 해상도와 비율을 일치시킨다.
+
+---
+
+## § 4. 비디오 연장 (Extend)
+
+### 언제: 기존 비디오를 자연스럽게 이어서 늘릴 때
+
+```python
+import time
+from google import genai
+from google.genai.types import GenerateVideosConfig, Video
+
+client = genai.Client()
+output_gcs_uri = "gs://your-bucket/output/"
+
+operation = client.models.generate_videos(
+    model="veo-3.1-generate-001",
+    prompt="Continue the scene naturally, same lighting and style",
+    video=Video(
+        uri="gs://your-bucket/input/original.mp4",   # 원본 비디오 GCS 경로
+        mime_type="video/mp4",
+    ),
+    config=GenerateVideosConfig(
+        output_gcs_uri=output_gcs_uri,
+    ),
+)
+
+while not operation.done:
+    time.sleep(15)
+    operation = client.operations.get(operation)
+
+for video in operation.result.generated_videos:
+    print(video.video.uri)
+```
+
+### 입력 비디오 요구사항
+
+| 항목 | 조건 |
+|------|------|
+| 포맷 | MP4 전용 |
+| 길이 | 1-30초 |
+| 프레임레이트 | 24fps |
+| 해상도 | 720p, 1080p, 4K |
+| 비율 | 9:16 또는 16:9 |
+
+### 출력 사양
+
+- 포맷: MP4
+- 연장 길이: 7초
+- 해상도/비율: 입력과 동일 유지
+
+> **원칙:**
+> - `Video` 객체에 `uri`(GCS)와 `mime_type="video/mp4"`를 반드시 명시한다.
+> - 프롬프트는 원본 스타일을 유지한다는 것을 명시한다.
