@@ -172,3 +172,70 @@ print(response.text)
 > - Maps 출처는 생성된 콘텐츠 바로 다음에 반드시 표시해야 한다.
 > - Gemini 3 Pro / Gemini 3 Pro Image는 일일 5,000 쿼리 제한.
 > - 금지 지역: 중국, 쿠바, 이란, 북한, 시리아 등.
+
+---
+
+## § 3. Vertex AI Search 그라운딩
+
+### 언제: 내 문서나 웹사이트 데이터 스토어로 RAG를 구성할 때
+
+```python
+from google import genai
+from google.genai.types import (
+    GenerateContentConfig,
+    HttpOptions,
+    Retrieval,
+    Tool,
+    VertexAISearch,
+)
+
+client = genai.Client(http_options=HttpOptions(api_version="v1"))
+
+# 데이터 스토어 경로 형식:
+# projects/{PROJECT_ID}/locations/global/collections/default_collection/dataStores/{DATASTORE_ID}
+DATASTORE_PATH = "projects/my-project/locations/global/collections/default_collection/dataStores/my-store"
+
+response = client.models.generate_content(
+    model="gemini-2.5-flash",
+    contents="What are the key features described in the documentation?",
+    config=GenerateContentConfig(
+        tools=[
+            Tool(
+                retrieval=Retrieval(
+                    vertex_ai_search=VertexAISearch(
+                        datastore=DATASTORE_PATH,
+                    )
+                )
+            )
+        ],
+    ),
+)
+
+print(response.text)
+# 출처 확인
+for chunk in response.candidates[0].grounding_metadata.grounding_chunks:
+    print(chunk.retrieved_context.uri)
+```
+
+### 사전 요구사항
+
+```bash
+# 1. AI Applications API 활성화
+gcloud services enable discoveryengine.googleapis.com
+
+# 2. IAM 권한 부여
+gcloud projects add-iam-policy-binding PROJECT_ID \
+  --member="user:USER_EMAIL" \
+  --role="roles/discoveryengine.viewer"
+```
+
+### 파라미터
+
+| 파라미터 | 타입 | 설명 |
+|---------|------|------|
+| `VertexAISearch.datastore` | `str` | 데이터 스토어 전체 리소스 경로 |
+
+> **원칙:**
+> - 최대 10개 데이터 소스를 동시에 사용할 수 있다.
+> - Google Search 그라운딩과 병행 사용 가능.
+> - Gemini 2.5 이상에서는 `confidence_scores`가 제공되지 않는다.
