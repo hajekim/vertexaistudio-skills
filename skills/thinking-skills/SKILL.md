@@ -169,3 +169,89 @@ for part in response.candidates[0].content.parts:
 > - `include_thoughts=True`는 베스트 에포트(best-effort) 기능이다 — 항상 사고 내용이 반환되지 않을 수 있다.
 > - `part.thought`가 `True`인 파트가 사고 요약, `False`인 파트가 최종 응답이다.
 > - 사고 요약은 축약본이다. 완전한 내부 사고 과정이 아니다.
+
+---
+
+## § 4. Thought Signatures (함수 호출 시)
+
+### 언제: 함수 호출이 포함된 멀티턴 대화에서 사고 연속성을 유지할 때
+
+Thought Signatures는 함수 호출 사이에 모델의 사고 상태를 유지하는 암호화된 토큰이다. SDK를 사용하면 자동으로 처리된다.
+
+```python
+from google import genai
+from google.genai.types import (
+    Content,
+    FunctionDeclaration,
+    GenerateContentConfig,
+    HttpOptions,
+    Part,
+    ThinkingConfig,
+    Tool,
+)
+
+client = genai.Client(http_options=HttpOptions(api_version="v1"))
+
+# 1. 도구 정의
+get_weather = FunctionDeclaration(
+    name="get_weather",
+    description="Gets current weather for a location.",
+    parameters={
+        "type": "object",
+        "properties": {"location": {"type": "string"}},
+        "required": ["location"],
+    },
+)
+tool = Tool(function_declarations=[get_weather])
+
+# 2. 첫 번째 요청 — 모델이 함수 호출 요청
+prompt = "What's the weather in Seoul?"
+response = client.models.generate_content(
+    model="gemini-2.5-flash",
+    contents=prompt,
+    config=GenerateContentConfig(
+        tools=[tool],
+        thinking_config=ThinkingConfig(include_thoughts=True),
+    ),
+)
+
+# 3. 함수 실행 (실제 API 호출 또는 목 데이터)
+func_call = response.function_calls[0]
+func_result = {"location": func_call.args["location"], "temperature": "18°C"}
+
+# 4. 함수 결과 포함 히스토리 구성 — 서명은 SDK가 자동 처리
+history = [
+    Content(role="user", parts=[Part(text=prompt)]),
+    response.candidates[0].content,   # Thought Signature 포함
+    Content(
+        role="tool",
+        parts=[Part.from_function_response(name=func_call.name, response=func_result)],
+    ),
+]
+
+# 5. 두 번째 요청 — 서명 덕분에 사고 연속성 유지
+response2 = client.models.generate_content(
+    model="gemini-2.5-flash",
+    contents=history,
+    config=GenerateContentConfig(
+        tools=[tool],
+        thinking_config=ThinkingConfig(include_thoughts=True),
+    ),
+)
+
+print(response2.text)
+```
+
+### Thought Signature 규칙
+
+| 규칙 | 설명 |
+|------|------|
+| SDK 자동 처리 | `chat` API나 `response.candidates[0].content` 그대로 전달하면 자동 포함 |
+| Part 수정 금지 | 서명이 있는 `Part`를 다른 `Part`와 합치거나 수정하면 안 된다 |
+| 병렬 함수 호출 | 첫 번째 `functionCall` Part에만 서명 포함, 모든 함수 호출은 응답보다 먼저 배치 |
+| Gemini 3 필수 | Gemini 3+ 모델은 서명 없이 요청 시 400 오류 반환 |
+
+> **원칙:**
+> - `chat.send_message()`를 사용하면 서명이 자동으로 처리된다.
+> - REST API로 직접 구현 시에는 `Part` 단위로 서명을 보존해야 한다.
+> - 서명 검증을 건너뛰려면 `skip_thought_signature_validator`를 사용할 수 있지만 성능이 저하된다.
