@@ -186,3 +186,63 @@ for part in response2.candidates[0].content.parts:
 > - 편집 프롬프트에 원본 이미지를 `contents` 리스트 첫 번째 요소로 전달한다.
 > - 멀티턴 편집은 `client.chats.create()`로 세션을 유지한다.
 > - 요청 전체 파일 크기는 50MB 이하로 유지한다.
+
+---
+
+## § 4. Best Practices
+
+### 프롬프트 작성 원칙
+
+**구체적으로 묘사한다**
+```
+# 나쁜 예
+"a warrior"
+
+# 좋은 예
+"A medieval elf archer with leather arm guards, fingerless gloves, and a wooden quiver"
+```
+
+**목적을 명시한다**
+```
+# 나쁜 예
+"make a logo"
+
+# 좋은 예
+"A minimalist premium logo for a skincare brand, clean lines, pastel tones"
+```
+
+**긍정적 표현을 사용한다**
+```
+# 나쁜 예
+"no cars in the street"
+
+# 좋은 예
+"an empty cobblestone street"
+```
+
+### 카메라/구도 용어 활용
+
+| 목적 | 용어 예시 |
+|------|---------|
+| 넓은 장면 | `wide-angle shot`, `establishing shot` |
+| 인물 클로즈업 | `close-up portrait`, `macro shot` |
+| 극적 분위기 | `low-angle shot`, `Dutch angle` |
+| 자연스러운 느낌 | `eye-level shot`, `candid style` |
+
+### 반복적 개선
+
+초기 결과가 완벽하지 않으면 후속 프롬프트로 조정한다:
+```
+"Make the lighting warmer"
+"Make the expression more serious"
+"Add more detail to the background"
+```
+
+### 단계별 구성 (복잡한 장면)
+
+복잡한 이미지는 순서대로 지시한다:
+1. 배경 설정: `"A foggy Victorian street at night"`
+2. 주요 피사체 추가: `"Add a detective in a trench coat"`
+3. 세부 요소 추가: `"Add gas lamps and wet cobblestones"`
+
+> **원칙:** 프롬프트가 모호하면 이미지 없이 텍스트만 반환될 수 있다. 이미지 생성을 명시적으로 요청한다.
