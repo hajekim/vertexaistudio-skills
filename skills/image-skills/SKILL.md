@@ -26,8 +26,9 @@ export GOOGLE_GENAI_USE_VERTEXAI="True"
 
 ```python
 from google import genai
+from google.genai.types import HttpOptions
 
-client = genai.Client()
+client = genai.Client(http_options=HttpOptions(api_version="v1"))
 ```
 
 ### 모델 선택 가이드
@@ -51,9 +52,9 @@ client = genai.Client()
 
 ```python
 from google import genai
-from google.genai.types import GenerateImagesConfig
+from google.genai.types import GenerateImagesConfig, HttpOptions
 
-client = genai.Client()
+client = genai.Client(http_options=HttpOptions(api_version="v1"))
 
 response = client.models.generate_images(
     model="imagen-4.0-generate-001",
@@ -84,12 +85,12 @@ for i, generated in enumerate(response.generated_images):
 
 ```python
 from google import genai
-from google.genai.types import GenerateContentConfig, Modality
+from google.genai.types import GenerateContentConfig, HttpOptions, Modality
 from PIL import Image
 from io import BytesIO
 import os
 
-client = genai.Client()
+client = genai.Client(http_options=HttpOptions(api_version="v1"))
 
 response = client.models.generate_content(
     model="gemini-2.5-flash-image",
@@ -134,11 +135,11 @@ response = client.models.generate_content(
 
 ```python
 from google import genai
-from google.genai.types import GenerateContentConfig, Modality
+from google.genai.types import GenerateContentConfig, HttpOptions, Modality
 from PIL import Image
 from io import BytesIO
 
-client = genai.Client()
+client = genai.Client(http_options=HttpOptions(api_version="v1"))
 
 # 원본 이미지 로드
 source_image = Image.open("input.png")
@@ -289,11 +290,11 @@ for part in response2.candidates[0].content.parts:
 
 ```python
 from google import genai
-from google.genai.types import GenerateContentConfig, Modality
+from google.genai.types import GenerateContentConfig, HttpOptions, Modality
 from PIL import Image
 from io import BytesIO
 
-client = genai.Client()
+client = genai.Client(http_options=HttpOptions(api_version="v1"))
 
 response = client.models.generate_content(
     model="gemini-3-pro-image-preview",

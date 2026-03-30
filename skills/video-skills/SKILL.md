@@ -28,8 +28,9 @@ export OUTPUT_GCS_URI="gs://your-bucket/output/"
 
 ```python
 from google import genai
+from google.genai.types import HttpOptions
 
-client = genai.Client()
+client = genai.Client(http_options=HttpOptions(api_version="v1"))
 output_gcs_uri = "gs://your-bucket/output/"  # 모든 생성 작업에 필요
 ```
 
@@ -70,9 +71,9 @@ for video in operation.result.generated_videos:
 ```python
 import time
 from google import genai
-from google.genai.types import GenerateVideosConfig
+from google.genai.types import GenerateVideosConfig, HttpOptions
 
-client = genai.Client()
+client = genai.Client(http_options=HttpOptions(api_version="v1"))
 output_gcs_uri = "gs://your-bucket/output/"
 
 operation = client.models.generate_videos(
@@ -116,9 +117,9 @@ for video in operation.result.generated_videos:
 ```python
 import time
 from google import genai
-from google.genai.types import GenerateVideosConfig, Image
+from google.genai.types import GenerateVideosConfig, HttpOptions, Image
 
-client = genai.Client()
+client = genai.Client(http_options=HttpOptions(api_version="v1"))
 output_gcs_uri = "gs://your-bucket/output/"
 
 operation = client.models.generate_videos(
@@ -156,9 +157,9 @@ for video in operation.result.generated_videos:
 ```python
 import time
 from google import genai
-from google.genai.types import GenerateVideosConfig, Image
+from google.genai.types import GenerateVideosConfig, HttpOptions, Image
 
-client = genai.Client()
+client = genai.Client(http_options=HttpOptions(api_version="v1"))
 output_gcs_uri = "gs://your-bucket/output/"
 
 operation = client.models.generate_videos(
@@ -200,9 +201,9 @@ for video in operation.result.generated_videos:
 ```python
 import time
 from google import genai
-from google.genai.types import GenerateVideosConfig, Video
+from google.genai.types import GenerateVideosConfig, HttpOptions, Video
 
-client = genai.Client()
+client = genai.Client(http_options=HttpOptions(api_version="v1"))
 output_gcs_uri = "gs://your-bucket/output/"
 
 operation = client.models.generate_videos(
@@ -258,11 +259,12 @@ import time
 from google import genai
 from google.genai.types import (
     GenerateVideosConfig,
+    HttpOptions,
     Image,
     VideoGenerationReferenceImage,
 )
 
-client = genai.Client()
+client = genai.Client(http_options=HttpOptions(api_version="v1"))
 output_gcs_uri = "gs://your-bucket/output/"
 
 operation = client.models.generate_videos(
@@ -305,13 +307,14 @@ import time
 from google import genai
 from google.genai.types import (
     GenerateVideosConfig,
+    HttpOptions,
     Video,
     Image,
     VideoGenerationMask,
     VideoGenerationMaskMode,
 )
 
-client = genai.Client()
+client = genai.Client(http_options=HttpOptions(api_version="v1"))
 output_gcs_uri = "gs://your-bucket/output/"
 
 operation = client.models.generate_videos(
@@ -350,13 +353,14 @@ import time
 from google import genai
 from google.genai.types import (
     GenerateVideosConfig,
+    HttpOptions,
     Video,
     Image,
     VideoGenerationMask,
     VideoGenerationMaskMode,
 )
 
-client = genai.Client()
+client = genai.Client(http_options=HttpOptions(api_version="v1"))
 output_gcs_uri = "gs://your-bucket/output/"
 
 operation = client.models.generate_videos(
@@ -452,9 +456,9 @@ config=GenerateVideosConfig(
 
 ```python
 from google import genai
-from google.genai.types import GenerateContentConfig
+from google.genai.types import GenerateContentConfig, HttpOptions
 
-text_client = genai.Client()
+text_client = genai.Client(http_options=HttpOptions(api_version="v1"))
 
 refined = text_client.models.generate_content(
     model="gemini-2.5-flash",
@@ -484,9 +488,9 @@ Generative AI Prohibited Use Policy에 의해 금지:
 ```python
 import time
 from google import genai
-from google.genai.types import GenerateVideosConfig
+from google.genai.types import GenerateVideosConfig, HttpOptions
 
-client = genai.Client()
+client = genai.Client(http_options=HttpOptions(api_version="v1"))
 output_gcs_uri = "gs://your-bucket/output/"
 
 operation = client.models.generate_videos(
