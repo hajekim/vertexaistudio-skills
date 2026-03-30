@@ -44,3 +44,75 @@ client = genai.Client(http_options=HttpOptions(api_version="v1"))
 | Enterprise Web Search | `EnterpriseWebSearch` | 컴플라이언스 규제 환경 |
 
 > **참고:** Vertex AI RAG Engine 그라운딩(`ground-responses-using-rag`)은 `vertexai` SDK(`google-cloud-aiplatform`)를 사용하며, 이 스킬의 `google-genai` SDK 범위에 포함되지 않는다.
+
+---
+
+## § 1. Google Search 그라운딩
+
+### 언제: 최신 공개 웹 정보로 응답을 보강할 때
+
+```python
+from google import genai
+from google.genai.types import (
+    GenerateContentConfig,
+    GoogleSearch,
+    HttpOptions,
+    Tool,
+)
+
+client = genai.Client(http_options=HttpOptions(api_version="v1"))
+
+response = client.models.generate_content(
+    model="gemini-2.5-flash",
+    contents="When is the next total solar eclipse in the United States?",
+    config=GenerateContentConfig(
+        tools=[
+            Tool(
+                google_search=GoogleSearch(
+                    exclude_domains=["domain.com"],   # 제외할 도메인 (선택)
+                )
+            )
+        ],
+    ),
+)
+
+print(response.text)
+# 검색 출처 확인
+for chunk in response.candidates[0].grounding_metadata.grounding_chunks:
+    print(chunk.web.uri)
+```
+
+### Dynamic Retrieval (조건부 그라운딩)
+
+```python
+from google.genai.types import DynamicRetrievalConfig, GoogleSearch, Tool
+
+response = client.models.generate_content(
+    model="gemini-2.5-flash",
+    contents="What is the capital of France?",
+    config=GenerateContentConfig(
+        tools=[
+            Tool(
+                google_search=GoogleSearch(
+                    dynamic_retrieval_config=DynamicRetrievalConfig(
+                        dynamic_threshold=0.6,   # 0.0~1.0: 낮을수록 더 자주 검색
+                    )
+                )
+            )
+        ],
+    ),
+)
+```
+
+### GoogleSearch 파라미터
+
+| 파라미터 | 타입 | 설명 |
+|---------|------|------|
+| `exclude_domains` | `list[str]` | 그라운딩에서 제외할 도메인 목록 |
+| `dynamic_retrieval_config` | `DynamicRetrievalConfig` | 조건부 그라운딩 설정 |
+| `dynamic_threshold` | `float` (0.0~1.0) | 검색 발동 임계값 |
+
+> **원칙:**
+> - 권장 temperature: `1.0`.
+> - 일일 최대 1,000,000 쿼리 제한.
+> - Search Suggestion HTML/CSS(`searchEntryPoint`)는 수정 없이 그대로 표시해야 한다.
