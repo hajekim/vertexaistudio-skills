@@ -10,7 +10,8 @@
       "Read(//home/ext_hajekim_google_com/.gemini/**)",
       "Bash(git add:*)",
       "Bash(git commit:*)",
-      "Bash(ln:*)"
+      "Bash(ln:*)",
+      "WebFetch(domain:pypi.org)"
     ]
   }
 }
