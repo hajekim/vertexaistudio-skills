@@ -125,3 +125,64 @@ response = client.models.generate_content(
 > - `response_modalities=[Modality.TEXT, Modality.IMAGE]`는 필수다.
 > - 응답 파트를 순회하며 `part.text`와 `part.inline_data`를 분기 처리한다.
 > - 이미지 데이터는 `part.inline_data.data` (bytes)로 반환된다.
+
+---
+
+## § 3. Gemini 이미지 편집
+
+### 언제: 기존 이미지를 수정하거나 스타일을 변환해야 할 때
+
+```python
+from google import genai
+from google.genai.types import GenerateContentConfig, Modality
+from PIL import Image
+from io import BytesIO
+
+client = genai.Client()
+
+# 원본 이미지 로드
+source_image = Image.open("input.png")
+
+response = client.models.generate_content(
+    model="gemini-3-pro-image-preview",
+    contents=[source_image, "Edit this image to make it look like a watercolor painting."],
+    config=GenerateContentConfig(
+        response_modalities=[Modality.TEXT, Modality.IMAGE],
+    ),
+)
+
+for part in response.candidates[0].content.parts:
+    if part.text:
+        print(part.text)
+    elif part.inline_data:
+        edited = Image.open(BytesIO(part.inline_data.data))
+        edited.save("edited.png")
+        print("Saved edited.png")
+```
+
+### 멀티턴 편집 (순차적 수정)
+
+```python
+chat = client.chats.create(
+    model="gemini-3-pro-image-preview",
+    config=GenerateContentConfig(
+        response_modalities=[Modality.TEXT, Modality.IMAGE],
+    ),
+)
+
+# 1차 편집
+source_image = Image.open("input.png")
+response1 = chat.send_message([source_image, "Make the sky more dramatic with dark clouds."])
+
+# 2차 편집 (이전 결과에 이어서)
+response2 = chat.send_message("Now add lightning bolts in the sky.")
+
+for part in response2.candidates[0].content.parts:
+    if part.inline_data:
+        Image.open(BytesIO(part.inline_data.data)).save("final.png")
+```
+
+> **원칙:**
+> - 편집 프롬프트에 원본 이미지를 `contents` 리스트 첫 번째 요소로 전달한다.
+> - 멀티턴 편집은 `client.chats.create()`로 세션을 유지한다.
+> - 요청 전체 파일 크기는 50MB 이하로 유지한다.
