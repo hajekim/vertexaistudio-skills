@@ -114,3 +114,84 @@ print(response.text)
 
 > **원칙:** 시스템 지시는 `GenerateContentConfig.system_instruction`에 설정한다.
 > 프롬프트 앞에 직접 붙이지 않는다.
+
+---
+
+## § 3. 함수 호출 (Function Calling)
+
+### 언제: 외부 API, 데이터베이스, 실시간 정보를 모델과 연결해야 할 때
+
+### Step 1: 함수 선언
+
+```python
+from google import genai
+from google.genai import types
+from google.genai.types import HttpOptions, GenerateContentConfig
+
+client = genai.Client(http_options=HttpOptions(api_version="v1"))
+
+get_weather_func = types.FunctionDeclaration(
+    name="get_current_weather",
+    description="Get the current weather in a given location.",
+    parameters={
+        "type": "object",
+        "properties": {
+            "location": {
+                "type": "string",
+                "description": "City name, e.g. 'Seoul'",
+            }
+        },
+        "required": ["location"],
+    },
+)
+```
+
+### Step 2: 모델에 도구 전달 및 함수 호출 응답 수신
+
+```python
+response = client.models.generate_content(
+    model="gemini-2.5-flash",
+    contents="What is the weather in Seoul?",
+    config=GenerateContentConfig(
+        tools=[types.Tool(function_declarations=[get_weather_func])],
+    ),
+)
+
+function_call = response.function_calls[0]
+print(function_call.name)   # "get_current_weather"
+print(function_call.args)   # {"location": "Seoul"}
+```
+
+### Step 3: 함수 실행 → 결과 반환
+
+```python
+# 실제 함수 실행 (예시)
+api_result = {"location": "Seoul", "temperature": 15, "condition": "Cloudy"}
+
+# 결과를 모델에 반환
+final_response = client.models.generate_content(
+    model="gemini-2.5-flash",
+    contents=[
+        types.Content(role="user", parts=[types.Part(text="What is the weather in Seoul?")]),
+        response.candidates[0].content,  # 모델의 함수 호출 요청
+        types.Content(
+            role="user",
+            parts=[
+                types.Part.from_function_response(
+                    name=function_call.name,
+                    response={"contents": api_result},
+                )
+            ],
+        ),
+    ],
+    config=GenerateContentConfig(
+        tools=[types.Tool(function_declarations=[get_weather_func])],
+    ),
+)
+print(final_response.text)
+```
+
+> **원칙:**
+> - `response.function_calls`로 함수 호출 여부를 확인한다.
+> - 함수 결과는 반드시 `Part.from_function_response()`로 감싸서 반환한다.
+> - 한 요청에 최대 512개 함수 선언 가능.
