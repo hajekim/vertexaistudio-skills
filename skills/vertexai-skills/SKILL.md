@@ -12,7 +12,7 @@ version: 1.0.0
 
 ```bash
 export GOOGLE_CLOUD_PROJECT="your-project-id"
-export GOOGLE_CLOUD_LOCATION="us-central1"   # 또는 "global"
+export GOOGLE_CLOUD_LOCATION="us-central1"   # "global"은 일부 모델만 지원
 export GOOGLE_GENAI_USE_VERTEXAI="True"
 ```
 
@@ -23,6 +23,16 @@ from google import genai
 from google.genai.types import HttpOptions
 
 client = genai.Client(http_options=HttpOptions(api_version="v1"))
+```
+
+### 대안: 직접 프로젝트 지정
+
+```python
+client = genai.Client(
+    vertexai=True,
+    project="your-project-id",
+    location="us-central1",
+)
 ```
 
 > **원칙:** `client`는 모듈 최상단에서 한 번 초기화한다. 함수마다 재생성하지 않는다.
